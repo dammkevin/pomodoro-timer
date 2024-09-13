@@ -1,0 +1,4 @@
+# Ignore SSH private and public keys
+id_ed25519_github
+id_ed25519_github.pub
+
