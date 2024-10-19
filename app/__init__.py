@@ -1,10 +1,9 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
-from flask_login import login_required
+from flask_login import LoginManager, login_required
 
-
+# Initialize extensions
 db = SQLAlchemy()
 bcrypt = Bcrypt()
 login_manager = LoginManager()
@@ -16,15 +15,22 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pomodoro.db'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Initialize extensions
+    # Initialize extensions with the app instance
     db.init_app(app)
     bcrypt.init_app(app)
     login_manager.init_app(app)
 
-    # Import route functions
-    from app.routes import home, login, start_session, end_session
+    # Import models after initializing extensions to avoid circular imports
+    from app.models import User
 
-    # Associate the routes with the `app` instance
+    # Define user_loader function for Flask-Login
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+
+    # Import routes after app and extensions have been initialized
+    from app.routes import home, login, register, start_session, end_session
+
     @app.route('/')
     def home_route():
         return home()
@@ -32,6 +38,10 @@ def create_app():
     @app.route('/login', methods=['GET', 'POST'])
     def login_route():
         return login()
+
+    @app.route('/register', methods=['GET', 'POST']) 
+    def register_route():
+        return register()
 
     @app.route('/start_session', methods=['POST'])
     @login_required
